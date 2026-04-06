@@ -226,29 +226,46 @@ function tick() {
         if (now - lastAnalysisTime > ANALYSIS_INTERVAL) {
             lastAnalysisTime = now;
             const img = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-            const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
-           
+            
+            // 白黒反転にも対応させて読み取り能力を上げる
+            const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "attemptBoth" });
+            
             if (code && code.data.trim() !== "") {
-                if (code.data === lastSeenQR) {
-                    seenCount++;
-                } else {
-                    lastSeenQR = code.data; seenCount = 1;
-                }
-               
-                if (seenCount >= 2) {
-                    if (!isProcessing && !isLocked && !isInterval) {
+                const scannedText = code.data.trim();
+                const isOK = (scannedText === MASTER_A || scannedText === MASTER_B);
+
+                if (!isProcessing && !isLocked && !isInterval) {
+                    if (isOK) {
+                        // ★【OKの場合】1回でも見つけたら即座にOK判定！（細かいQRでもサクサク読める）
                         isProcessing = true;
-                        const ok = (code.data === MASTER_A || code.data === MASTER_B);
-                        playBeep(ok ? "ok" : "ng");
-                        updateStatus(ok);
-                        saveLog(ok ? "OK" : "NG");
+                        playBeep("ok");
+                        updateStatus(true);
+                        saveLog("OK");
                         seenCount = 0;
                         lastSeenQR = "";
+                    } else {
+                        // ★【NGの場合】誤スキャン防止のため、同じ不正なQRが2回連続で映った時だけNGにする
+                        if (scannedText === lastSeenQR) {
+                            seenCount++;
+                        } else {
+                            lastSeenQR = scannedText;
+                            seenCount = 1;
+                        }
+
+                        if (seenCount >= 2) {
+                            isProcessing = true;
+                            playBeep("ng");
+                            updateStatus(false);
+                            saveLog("NG");
+                            seenCount = 0;
+                            lastSeenQR = "";
+                        }
                     }
                 }
             } else {
+                // QRが画面から消えたらカウントをリセット
                 seenCount = 0;
-                lastSeenQR = "";
+                lastSeenQR = ""; 
             }
         }
     }
