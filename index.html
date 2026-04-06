@@ -20,7 +20,7 @@
         .mirror { transform: scaleX(-1); }
 
         #camera-switch { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: 2px solid #fff; border-radius: 50%; width: 50px; height: 50px; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; z-index: 10; cursor: pointer; }
-        
+       
         .info-panel { margin: 5px 10px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 15px; border: 4px solid #ffeb3b; text-align: center; flex-shrink: 0; }
         .info-label { font-size: 1.3rem; margin-bottom: 2px; font-weight: bold; color: #ffeb3b; }
         #target-info { font-size: 3.5rem; font-weight: 900; line-height: 1.0; word-break: break-all; color: #fff; text-shadow: 3px 3px 8px #000; }
@@ -37,11 +37,13 @@
         #lock-overlay { background: rgba(220, 53, 69, 0.98); }
         #lock-overlay h1 { font-size: 6rem; margin: 0; font-weight: 900; }
         #lock-overlay p { font-size: 1.5rem; margin-bottom: 30px; }
-        
+       
         #pw-input { font-size: 3rem; width: 80%; max-width: 300px; padding: 15px; text-align: center; border-radius: 15px; border: none; margin-bottom: 20px; -webkit-text-security: disc; }
         .btn-unlock { background: white; color: #dc3545; padding: 20px 50px; font-size: 1.5rem; border-radius: 15px; font-weight: 900; }
 
         #start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#003366; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; cursor: pointer; }
+        #start-overlay:active { background: #001a33; }
+       
         .modal { position:fixed; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; background:#fff; z-index:5000; color:#333; }
         .modal-content { padding: 20px; flex-grow: 1; overflow-y: auto; }
     </style>
@@ -55,25 +57,25 @@
     </div>
 
     <div id="start-overlay" onclick="startApp()">
-        <div style="font-size: 3.5rem; font-weight: 900; color: #ffeb3b; margin-bottom: 20px;">【310Dセパレータ専用】</div>
+        <div style="font-size: 3.5rem; font-weight: 900; color: #ffeb3b; margin-bottom: 20px;">【310D専用】</div>
         <div style="font-size: 1.8rem; font-weight: bold; color: white;">タップして開始</div>
     </div>
-    
+   
     <div id="status-display">READY</div>
     <div id="count-display">照合数: 0 枚</div>
-    
+   
     <div class="video-container">
         <div id="camera-switch" onclick="switchCamera()">🔄</div>
         <canvas id="canvas"></canvas>
     </div>
-    
+   
     <div class="info-panel">
         <div class="info-label">対象製品</div>
         <div id="target-info">310Dセパレーター</div>
     </div>
 
     <div class="log-display-area" id="recent-logs"></div>
-    
+   
     <div class="main-panel">
         <div class="btn-group">
             <button class="btn-sub" onclick="toggleModal('log-modal')" style="background: #6c757d; color: white;">📊 照合履歴</button>
@@ -107,46 +109,88 @@
     </div>
 
 <script>
+// --- グローバルエラーキャッチ ---
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+    alert("【システムエラー】\n" + msg + "\n行番号: " + lineNo);
+    return false;
+};
+
 // --- 設定値 ---
 const UNLOCK_PASSWORD = "8181";
-const SCAN_INTERVAL_MS = 2000; 
-const ANALYSIS_INTERVAL = 200; 
-
-// --- 専用マスター文字列の定義 ---
+const SCAN_INTERVAL_MS = 2000;
+const ANALYSIS_INTERVAL = 200;
 const MASTER_A = "585774211000";
 const MASTER_B = "TAI21100801720260126310D 585774211000 000000020000000226012615581339400010";
 
-const video = document.createElement("video");
-const canvasElement = document.getElementById("canvas");
-const canvas = canvasElement.getContext("2d", { willReadFrequently: true });
-let audioCtx;
-let isLocked = false;
-let isInterval = false;
-// ★初期状態を内カメラ(user)に設定
-let currentFacingMode = "user"; 
-let okCount = 0; 
-let lastAnalysisTime = 0;
-let isProcessing = false;
+// --- 変数定義 ---
+let video, canvasElement, canvas, audioCtx;
+let isLocked = false, isInterval = false, isProcessing = false;
+let currentFacingMode = "user"; // ★内カメラ起動
+let okCount = 0, lastAnalysisTime = 0, seenCount = 0;
 let lastSeenQR = "";
-let seenCount = 0;
-let logs = JSON.parse(localStorage.getItem("310D_logs")) || [];
+let logs = [];
+
+// ページ読み込み時に安全に初期化
+window.onload = function() {
+    try {
+        video = document.createElement("video");
+        canvasElement = document.getElementById("canvas");
+        canvas = canvasElement.getContext("2d", { willReadFrequently: true });
+       
+        try {
+            logs = JSON.parse(localStorage.getItem("310D_logs")) || [];
+        } catch(e) {
+            console.warn("ローカルストレージの読み込みが制限されています", e);
+        }
+        renderRecentLogs();
+    } catch(e) {
+        alert("画面の初期化に失敗しました: " + e.message);
+    }
+};
 
 async function startApp() {
-    document.getElementById("start-overlay").style.display = "none";
-    await initCamera();
+    try {
+        if (typeof jsQR === 'undefined') {
+            alert("QR解析プログラムの読み込みに失敗しました。通信環境を確認してページを再読み込みしてください。");
+            return;
+        }
+
+        document.getElementById("start-overlay").style.display = "none";
+       
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") await audioCtx.resume();
+       
+        await initCamera();
+    } catch(e) {
+        alert("起動時にエラーが発生しました: " + e.message);
+    }
 }
 
 async function initCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("この環境ではカメラの使用が許可されていません。\n※URLが https:// から始まっているか確認してください（ローカルファイルでは動作しません）。");
+        return;
+    }
+
     if (video.srcObject) {
         video.srcObject.getTracks().forEach(track => track.stop());
     }
-    const constraints = { video: { facingMode: currentFacingMode, width: 1280, height: 1280 } };
+   
+    // 解像度を「ideal(理想)」にすることでカメラクラッシュを防止
+    const constraints = {
+        video: {
+            facingMode: currentFacingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 1280 }
+        }
+    };
+   
     try {
         const s = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = s;
         video.setAttribute("playsinline", true);
-        video.play();
-        // 内カメラ(user)の場合は鏡像表示にする
+        await video.play();
+       
         if (currentFacingMode === "user") {
             canvasElement.classList.add("mirror");
         } else {
@@ -154,7 +198,7 @@ async function initCamera() {
         }
         requestAnimationFrame(tick);
     } catch (err) {
-        alert("カメラの起動に失敗しました: " + err);
+        alert("カメラの起動に失敗しました（権限が拒否されたか、カメラが他のアプリで使用中です）: " + err.message);
     }
 }
 
@@ -174,23 +218,76 @@ function tick() {
             lastAnalysisTime = now;
             const img = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
-            
+           
             if (code && code.data.trim() !== "") {
-                if (code.data === lastSeenQR) { 
-                    seenCount++; 
-                } else { 
-                    lastSeenQR = code.data; seenCount = 1; 
+                if (code.data === lastSeenQR) {
+                    seenCount++;
+                } else {
+                    lastSeenQR = code.data; seenCount = 1;
                 }
-                
+               
                 if (seenCount >= 2) {
                     if (!isProcessing && !isLocked && !isInterval) {
                         isProcessing = true;
+                        const ok = (code.data === MASTER_A || code.data === MASTER_B);
+                        playBeep(ok ? "ok" : "ng");
+                        updateStatus(ok);
+                        saveLog(ok ? "OK" : "NG");
+                        seenCount = 0;
+                        lastSeenQR = "";
+                    }
+                }
+            } else {
+                seenCount = 0;
+                lastSeenQR = "";
+            }
+        }
+    }
+    requestAnimationFrame(tick);
+}
+
+function playBeep(type) {
+    if (!audioCtx) return;
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const now = audioCtx.currentTime;
+    if (type === "ok") {
+        const g = audioCtx.createGain(); g.connect(audioCtx.destination);
+        const o1 = audioCtx.createOscillator(); o1.type = "triangle";
+        o1.frequency.setValueAtTime(1046.50, now); g.gain.setValueAtTime(0.3, now);
+        o1.connect(g); o1.start(now); o1.stop(now + 0.12);
+    } else {
+        [0, 0.22].forEach(delay => {
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.type='square'; o.frequency.setValueAtTime(150, now + delay);
+            g.gain.setValueAtTime(0.5, now + delay);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(now + delay); o.stop(now + delay + 0.25);
+        });
+    }
+}
+
+function updateStatus(ok) {
+    if (ok) {
+        okCount++;
+        document.getElementById("count-display").innerText = `照合数: ${okCount} 枚`;
+        document.body.className = "ok";
+        document.getElementById("status-display").innerText = "OK";
+        setTimeout(() => {
+            isInterval = true; isProcessing = false;
+            document.body.className = "wait";
+            document.getElementById("status-display").innerText = "WAIT";
+            setTimeout(() => {
+                isInterval = false; document.body.className = "";
+                document.getElementById("status-display").innerText = "READY";
+            }, SCAN_INTERVAL_MS);
         }, 1200);
     } else {
         document.body.className = "ng";
         document.getElementById("status-display").innerText = "NG";
         isLocked = true;
-        window.location.href = `shortcuts://run-shortcut?name=${encodeURIComponent("QR通知")}&input=text&text=${encodeURIComponent("【310D不一致】が発生しました")}`;
+        try {
+            window.location.href = `shortcuts://run-shortcut?name=${encodeURIComponent("QR通知")}&input=text&text=${encodeURIComponent("【310D不一致】が発生しました")}`;
+        } catch(e){}
         setTimeout(() => {
             document.getElementById("lock-overlay").style.display = "flex";
             document.getElementById("pw-input").focus();
@@ -213,21 +310,25 @@ function unlock() {
 
 function saveLog(res) {
     const now = new Date();
-    logs.push({ 
-        date: now.toLocaleDateString(), 
-        time: now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"}), 
-        master: "310Dセパレーター", 
-        result: res 
+    logs.push({
+        date: now.toLocaleDateString(),
+        time: now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"}),
+        master: "310Dセパレーター",
+        result: res
     });
-    localStorage.setItem("310D_logs", JSON.stringify(logs));
+    try { localStorage.setItem("310D_logs", JSON.stringify(logs)); } catch(e){}
     renderRecentLogs();
 }
 
 function renderRecentLogs() {
+    if(!logs || logs.length === 0) {
+        document.getElementById("recent-logs").innerHTML = '<div style="color:#999; text-align:center; padding-top:40px;">履歴なし</div>';
+        return;
+    }
     const recent = logs.slice(-3).reverse();
     document.getElementById("recent-logs").innerHTML = recent.map(l => `
         <div class="log-item"><span><b style="color:${l.result==='OK'?'#28a745':'#dc3545'}">[${l.result}]</b> ${l.time}</span><span>${l.master}</span></div>
-    `).join("") || '<div style="color:#999; text-align:center; padding-top:40px;">履歴なし</div>';
+    `).join("");
 }
 
 function toggleModal(id) {
@@ -239,14 +340,15 @@ function toggleModal(id) {
 
 function renderAnalysis() {
     let totalOk = 0; let totalNg = 0;
-    logs.forEach(l => { if (l.result === "OK") totalOk++; else if (l.result === "NG") totalNg++; });
+    (logs || []).forEach(l => { if (l.result === "OK") totalOk++; else if (l.result === "NG") totalNg++; });
     document.getElementById("summary-dashboard").innerHTML = `<b>累計：</b> <span style="color:#28a745">OK ${totalOk}</span> / <span style="color:#dc3545">NG ${totalNg}</span><hr>`;
-    document.getElementById("full-log-list").innerHTML = logs.slice(-30).reverse().map(l => `<div style="padding:10px; border-bottom:1px solid #eee; font-size:1rem;">[${l.result}] ${l.date} ${l.time}</div>`).join("");
+    document.getElementById("full-log-list").innerHTML = (logs || []).slice(-30).reverse().map(l => `<div style="padding:10px; border-bottom:1px solid #eee; font-size:1rem;">[${l.result}] ${l.date} ${l.time}</div>`).join("");
 }
 
 function clearLogs() {
     if (prompt("パスワードを入力:") === UNLOCK_PASSWORD) {
-        logs = []; localStorage.setItem("310D_logs", "[]");
+        logs = [];
+        try { localStorage.setItem("310D_logs", "[]"); } catch(e){}
         renderRecentLogs(); renderAnalysis();
     }
 }
@@ -261,13 +363,13 @@ function confirmFinish() {
 
 function exportCSV() {
     let csv = "日付,時間,製品名,結果\n";
-    logs.forEach(l => { csv += `${l.date},${l.time},${l.master},${l.result}\n`; });
+    (logs || []).forEach(l => { csv += `${l.date},${l.time},${l.master},${l.result}\n`; });
     const b = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `310D_scan_report.csv`; a.click();
 }
 
 function triggerIphoneShortcut(msg) {
-    window.location.href = `shortcuts://run-shortcut?name=${encodeURIComponent("QR通知")}&input=text&text=${encodeURIComponent(msg)}`;
+    try { window.location.href = `shortcuts://run-shortcut?name=${encodeURIComponent("QR通知")}&input=text&text=${encodeURIComponent(msg)}`; } catch(e){}
     document.getElementById("admin-lock-overlay").style.display = "flex";
     setTimeout(() => {
         let pass = "";
@@ -278,8 +380,7 @@ function triggerIphoneShortcut(msg) {
         document.getElementById("admin-lock-overlay").style.display = "none";
     }, 1000);
 }
-
-renderRecentLogs();
 </script>
 </body>
 </html>
+
