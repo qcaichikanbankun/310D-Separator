@@ -21,11 +21,11 @@
 
         #camera-switch { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: 2px solid #fff; border-radius: 50%; width: 50px; height: 50px; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; z-index: 10; cursor: pointer; }
         
-        .info-panel { margin: 5px 10px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 15px; border: 4px solid #ffeb3b; text-align: center; flex-shrink: 0; }
+        .info-panel { margin: 5px 10px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 15px; border: 4px solid #ffeb3b; text-align: center; flex-shrink: 0; }
         .info-label { font-size: 1.3rem; margin-bottom: 2px; font-weight: bold; color: #ffeb3b; }
-        #target-info { font-size: 3.5rem; font-weight: 900; line-height: 1.0; color: #fff; text-shadow: 3px 3px 8px #000; }
+        #target-info { font-size: 3.5rem; font-weight: 900; line-height: 1.0; word-break: break-all; color: #fff; text-shadow: 3px 3px 8px #000; }
 
-        .log-display-area { background: #fff; color: #333; height: 120px; overflow: hidden; padding: 0 20px; border-bottom: 1px solid #ddd; margin-top: auto; }
+        .log-display-area { background: #fff; color: #333; height: 115px; overflow: hidden; padding: 0 20px; border-bottom: 1px solid #ddd; margin-top: auto;}
         .log-item { padding: 6px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; }
 
         .main-panel { background-color: #ffffff; width: 95%; margin: 10px auto; border-radius: 15px; padding-bottom: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); overflow: hidden; }
@@ -33,11 +33,15 @@
 
         .btn-main, .btn-sub { width: 100%; height: 60px; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
-        #lock-overlay, #admin-lock-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(220, 53, 69, 0.98); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; text-align: center; color: white; }
+        #lock-overlay, #admin-lock-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; text-align: center; color: white; }
+        #lock-overlay { background: rgba(220, 53, 69, 0.98); }
+        #lock-overlay h1 { font-size: 6rem; margin: 0; font-weight: 900; }
+        #lock-overlay p { font-size: 1.5rem; margin-bottom: 30px; }
+        
         #pw-input { font-size: 3rem; width: 80%; max-width: 300px; padding: 15px; text-align: center; border-radius: 15px; border: none; margin-bottom: 20px; -webkit-text-security: disc; }
         .btn-unlock { background: white; color: #dc3545; padding: 20px 50px; font-size: 1.5rem; border-radius: 15px; font-weight: 900; }
 
-        #start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#004085; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; text-align:center; cursor:pointer;}
+        #start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:#003366; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; cursor: pointer; }
         .modal { position:fixed; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; background:#fff; z-index:5000; color:#333; }
         .modal-content { padding: 20px; flex-grow: 1; overflow-y: auto; }
     </style>
@@ -45,14 +49,14 @@
 <body>
     <div id="lock-overlay">
         <h1>NG 発生</h1>
-        <p>不一致です！管理者を確認してください。</p>
+        <p>不一致です。管理者に確認してください。</p>
         <input type="number" id="pw-input" placeholder="****" inputmode="numeric">
         <button class="btn-unlock" onclick="unlock()">解除</button>
     </div>
 
     <div id="start-overlay" onclick="startApp()">
-        <div style="font-size: 3.5rem; font-weight: 900; color: #ffeb3b; margin-bottom: 20px;">310Dセパレータ専用</div>
-        <div style="font-size: 1.5rem; color: #fff;">タップして開始</div>
+        <div style="font-size: 3.5rem; font-weight: 900; color: #ffeb3b; margin-bottom: 20px;">【310Dセパレータ専用】</div>
+        <div style="font-size: 1.8rem; font-weight: bold; color: white;">タップして開始</div>
     </div>
     
     <div id="status-display">READY</div>
@@ -69,12 +73,12 @@
     </div>
 
     <div class="log-display-area" id="recent-logs"></div>
-
+    
     <div class="main-panel">
         <div class="btn-group">
             <button class="btn-sub" onclick="toggleModal('log-modal')" style="background: #6c757d; color: white;">📊 照合履歴</button>
-            <button class="btn-main" onclick="triggerIphoneShortcut('310D 管理者呼び出し')" style="background: #ffc107; color: black;">🔔 管理者を呼ぶ</button>
-            <button class="btn-sub" onclick="confirmFinish()" style="background: #b40000; color: white; grid-column: span 2;">■ 生産終了(リセット)</button>
+            <button class="btn-main" onclick="triggerIphoneShortcut('【310Dセパレーター】管理者を呼んでいます')" style="background: #ffc107; color: black;">🔔 管理者を呼ぶ</button>
+            <button class="btn-sub" onclick="confirmFinish()" style="background: #b40000; color: white; grid-column: span 2;">■ カウントリセット</button>
         </div>
     </div>
 
@@ -91,22 +95,24 @@
         </div>
     </div>
 
-    <div id="admin-lock-overlay" style="display: none; flex-direction: column;">
+    <div id="admin-lock-overlay" style="background: rgba(0,0,0,0.95);">
         <div style="padding: 20px;">
             <h1 style="color: #ffc107; font-size: 2.5rem; margin-bottom: 20px;">⚠️ 管理者呼び出し中</h1>
             <p style="font-size: 1.5rem; line-height: 1.6;">
-                310Dセパレータ照合中断<br>
-                <span style="color: #fff; font-weight: bold;">管理者が解除するまで待機</span>
+                管理者が来るまで<br>
+                <span style="color: #f44336; font-weight: bold;">作業を中断すること</span>
             </p>
+            <p style="margin-top: 50px; color: #888;">(管理者が解除パスワードを入力してください)</p>
         </div>
     </div>
 
 <script>
+// --- 設定値 ---
 const UNLOCK_PASSWORD = "8181";
-const SCAN_INTERVAL_MS = 10000; // 次の照合までの待ち時間(10秒)
-const ANALYSIS_INTERVAL = 200;
+const SCAN_INTERVAL_MS = 2000; 
+const ANALYSIS_INTERVAL = 200; 
 
-// 固定マスター
+// --- 専用マスター文字列の定義 ---
 const MASTER_A = "585774211000";
 const MASTER_B = "TAI21100801720260126310D 585774211000 000000020000000226012615581339400010";
 
@@ -116,8 +122,9 @@ const canvas = canvasElement.getContext("2d", { willReadFrequently: true });
 let audioCtx;
 let isLocked = false;
 let isInterval = false;
-let currentFacingMode = "environment"; 
-let okCount = 0;
+// ★初期状態を内カメラ(user)に設定
+let currentFacingMode = "user"; 
+let okCount = 0; 
 let lastAnalysisTime = 0;
 let isProcessing = false;
 let lastSeenQR = "";
@@ -130,17 +137,25 @@ async function startApp() {
 }
 
 async function initCamera() {
-    if (video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); }
+    if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+    }
     const constraints = { video: { facingMode: currentFacingMode, width: 1280, height: 1280 } };
     try {
         const s = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = s;
         video.setAttribute("playsinline", true);
         video.play();
-        if (currentFacingMode === "user") { canvasElement.classList.add("mirror"); } 
-        else { canvasElement.classList.remove("mirror"); }
+        // 内カメラ(user)の場合は鏡像表示にする
+        if (currentFacingMode === "user") {
+            canvasElement.classList.add("mirror");
+        } else {
+            canvasElement.classList.remove("mirror");
+        }
         requestAnimationFrame(tick);
-    } catch (err) { alert("カメラの起動に失敗しました: " + err); }
+    } catch (err) {
+        alert("カメラの起動に失敗しました: " + err);
+    }
 }
 
 function switchCamera() {
@@ -159,71 +174,23 @@ function tick() {
             lastAnalysisTime = now;
             const img = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
-
+            
             if (code && code.data.trim() !== "") {
-                if (code.data === lastSeenQR) { seenCount++; } 
-                else { lastSeenQR = code.data; seenCount = 1; }
-
-                if (seenCount >= 2 && !isProcessing && !isLocked && !isInterval) {
-                    isProcessing = true;
-                    // AまたはBのいずれかに一致するか判定
-                    const ok = (code.data === MASTER_A || code.data === MASTER_B);
-                    playBeep(ok ? "ok" : "ng");
-                    updateStatus(ok);
-                    saveLog(ok ? "OK" : "NG");
-                    seenCount = 0;
-                    lastSeenQR = "";
+                if (code.data === lastSeenQR) { 
+                    seenCount++; 
+                } else { 
+                    lastSeenQR = code.data; seenCount = 1; 
                 }
-            } else { 
-                seenCount = 0; 
-                lastSeenQR = ""; 
-            }
-        }
-    }
-    requestAnimationFrame(tick);
-}
-
-function playBeep(type) {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === "suspended") audioCtx.resume();
-    const now = audioCtx.currentTime;
-    if (type === "ok") {
-        const g = audioCtx.createGain(); g.connect(audioCtx.destination);
-        const o1 = audioCtx.createOscillator(); o1.type = "triangle";
-        o1.frequency.setValueAtTime(1046.50, now); g.gain.setValueAtTime(0.3, now);
-        o1.connect(g); o1.start(now); o1.stop(now + 0.12);
-    } else {
-        [0, 0.22].forEach(delay => {
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type='square'; o.frequency.setValueAtTime(150, now + delay);
-            g.gain.setValueAtTime(0.5, now + delay);
-            o.connect(g); g.connect(audioCtx.destination);
-            o.start(now + delay); o.stop(now + delay + 0.25);
-        });
-    }
-}
-
-function updateStatus(ok) {
-    if (ok) {
-        okCount++;
-        document.getElementById("count-display").innerText = `照合数: ${okCount} 枚`;
-        document.body.className = "ok";
-        document.getElementById("status-display").innerText = "OK";
-        setTimeout(() => {
-            isInterval = true; isProcessing = false;
-            document.body.className = "wait";
-            document.getElementById("status-display").innerText = "WAIT";
-            setTimeout(() => {
-                isInterval = false; document.body.className = "";
-                document.getElementById("status-display").innerText = "READY";
-            }, SCAN_INTERVAL_MS);
-        }, 1000);
+                
+                if (seenCount >= 2) {
+                    if (!isProcessing && !isLocked && !isInterval) {
+                        isProcessing = true;
+        }, 1200);
     } else {
         document.body.className = "ng";
         document.getElementById("status-display").innerText = "NG";
         isLocked = true;
-        // ショートカット通知
-        window.location.href = `shortcuts://run-shortcut?name=${encodeURIComponent("QR通知")}&input=text&text=${encodeURIComponent("【310D NG】不一致が発生しました")}`;
+        window.location.href = `shortcuts://run-shortcut?name=${encodeURIComponent("QR通知")}&input=text&text=${encodeURIComponent("【310D不一致】が発生しました")}`;
         setTimeout(() => {
             document.getElementById("lock-overlay").style.display = "flex";
             document.getElementById("pw-input").focus();
@@ -238,12 +205,20 @@ function unlock() {
         document.getElementById("pw-input").value = "";
         document.body.className = "";
         document.getElementById("status-display").innerText = "READY";
-    } else { alert("パスワード不備"); document.getElementById("pw-input").value = ""; }
+    } else {
+        alert("パスワードが違います");
+        document.getElementById("pw-input").value = "";
+    }
 }
 
 function saveLog(res) {
     const now = new Date();
-    logs.push({ date: now.toLocaleDateString(), time: now.toLocaleTimeString(), master: "310Dセパレーター", result: res });
+    logs.push({ 
+        date: now.toLocaleDateString(), 
+        time: now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"}), 
+        master: "310Dセパレーター", 
+        result: res 
+    });
     localStorage.setItem("310D_logs", JSON.stringify(logs));
     renderRecentLogs();
 }
@@ -263,11 +238,10 @@ function toggleModal(id) {
 }
 
 function renderAnalysis() {
-    let ok = 0; let ng = 0;
-    logs.forEach(l => { if (l.result === "OK") ok++; else if (l.result === "NG") ng++; });
-    let html = `<b>310D累計：</b> <span style="color:#28a745">OK ${ok}</span> / <span style="color:#dc3545">NG ${ng}</span><hr>`;
-    document.getElementById("summary-dashboard").innerHTML = html;
-    document.getElementById("full-log-list").innerHTML = logs.slice(-20).reverse().map(l => `<div style="padding:10px; border-bottom:1px solid #eee; font-size:1rem;">[${l.result}] ${l.date} ${l.time}</div>`).join("");
+    let totalOk = 0; let totalNg = 0;
+    logs.forEach(l => { if (l.result === "OK") totalOk++; else if (l.result === "NG") totalNg++; });
+    document.getElementById("summary-dashboard").innerHTML = `<b>累計：</b> <span style="color:#28a745">OK ${totalOk}</span> / <span style="color:#dc3545">NG ${totalNg}</span><hr>`;
+    document.getElementById("full-log-list").innerHTML = logs.slice(-30).reverse().map(l => `<div style="padding:10px; border-bottom:1px solid #eee; font-size:1rem;">[${l.result}] ${l.date} ${l.time}</div>`).join("");
 }
 
 function clearLogs() {
@@ -278,7 +252,7 @@ function clearLogs() {
 }
 
 function confirmFinish() {
-    if (confirm("カウントをリセットしてREADYに戻りますか？")) {
+    if (confirm("カウントをリセットして初期状態に戻しますか？")) {
         okCount = 0; document.getElementById("count-display").innerText = `照合数: 0 枚`;
         isInterval = false; isProcessing = false;
         document.body.className = ""; document.getElementById("status-display").innerText = "READY";
@@ -286,19 +260,23 @@ function confirmFinish() {
 }
 
 function exportCSV() {
-    let csv = "日付,時間,製品,結果\n";
+    let csv = "日付,時間,製品名,結果\n";
     logs.forEach(l => { csv += `${l.date},${l.time},${l.master},${l.result}\n`; });
     const b = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `310D_report.csv`; a.click();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `310D_scan_report.csv`; a.click();
 }
 
 function triggerIphoneShortcut(msg) {
     window.location.href = `shortcuts://run-shortcut?name=${encodeURIComponent("QR通知")}&input=text&text=${encodeURIComponent(msg)}`;
     document.getElementById("admin-lock-overlay").style.display = "flex";
     setTimeout(() => {
-        let p = ""; while(p !== UNLOCK_PASSWORD) { p = prompt("管理者パスワード:"); if(p === null) break; }
+        let pass = "";
+        while (pass !== UNLOCK_PASSWORD) {
+            pass = prompt("管理者の解除パスワードを入力してください：");
+            if (pass === null) break;
+        }
         document.getElementById("admin-lock-overlay").style.display = "none";
-    }, 500);
+    }, 1000);
 }
 
 renderRecentLogs();
