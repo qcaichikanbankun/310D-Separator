@@ -176,29 +176,30 @@ async function startApp() {
 
 async function initCamera() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("この環境ではカメラの使用が許可されていません。\n※URLが https:// から始まっているか確認してください（ローカルファイルでは動作しません）。");
+        alert("この環境ではカメラの使用が許可されていません。\n※URLが https:// から始まっているか確認してください。");
         return;
     }
 
     if (video.srcObject) {
         video.srcObject.getTracks().forEach(track => track.stop());
     }
-   
-    // 解像度を「ideal(理想)」にすることでカメラクラッシュを防止
-    const constraints = {
-        video: {
-            facingMode: currentFacingMode,
-            width: { ideal: 1280 },
-            height: { ideal: 1280 }
-        }
+    
+    // ★修正ポイント：解像度を大幅に引き上げ、オートフォーカスを要求
+    const constraints = { 
+        video: { 
+            facingMode: currentFacingMode, 
+            width: { ideal: 1920, max: 3840 }, // フルHD〜4K画質を要求
+            height: { ideal: 1920, max: 3840 },
+            advanced: [{ focusMode: "continuous" }] // 常にピントを合わせるようブラウザに指示
+        } 
     };
-   
+    
     try {
         const s = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = s;
         video.setAttribute("playsinline", true);
         await video.play();
-       
+        
         if (currentFacingMode === "user") {
             canvasElement.classList.add("mirror");
         } else {
@@ -206,10 +207,10 @@ async function initCamera() {
         }
         requestAnimationFrame(tick);
     } catch (err) {
-        alert("カメラの起動に失敗しました（権限が拒否されたか、カメラが他のアプリで使用中です）: " + err.message);
+        alert("カメラの起動に失敗しました: " + err.message);
     }
 }
-
+    
 function switchCamera() {
     currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
     initCamera();
