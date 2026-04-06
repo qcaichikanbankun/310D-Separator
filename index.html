@@ -278,7 +278,7 @@ function playBeep(type) {
 function updateStatus(ok) {
     if (ok) {
         okCount++;
-        document.getElementById("count-display").innerText = `照合数: ${okCount} 枚`;
+        document.getElementById("count-display").innerText = `かんばん照合数: ${okCount} 枚`;
         document.body.className = "ok";
         document.getElementById("status-display").innerText = "OK";
         setTimeout(() => {
@@ -363,8 +363,8 @@ function clearLogs() {
 }
 
 function confirmFinish() {
-    if (confirm("カウントをリセットして初期状態に戻しますか？")) {
-        okCount = 0; document.getElementById("count-display").innerText = `照合数: 0 枚`;
+    if (confirm("かんばん照合枚数をリセットして0枚にしますか？")) {
+        okCount = 0; document.getElementById("count-display").innerText = `かんばん照合数: 0 枚`;
         isInterval = false; isProcessing = false;
         document.body.className = ""; document.getElementById("status-display").innerText = "READY";
     }
